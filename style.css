@@ -1,0 +1,7 @@
+#Canvas-Wrapper {
+    position: relative;
+}
+
+#Canvas-Wrapper canvas {
+    position: absolute;
+}
