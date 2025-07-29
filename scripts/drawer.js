@@ -2,7 +2,7 @@ import { Players } from "../configs.js"
 
 export class GameDrawer
 {
-    constructor({ SquareSizeInPixel=100, GameCanvas, SelectCanvas, BorderCanvas, BorderWidthInPixel=10})
+    constructor({ SquareSizeInPixel=[100, 100], GameCanvas, SelectCanvas, BorderCanvas, BorderWidthInPixel=10})
     {
         this.GameCanvasContext = GameCanvas.getContext('2d')
         this.SquareSize = SquareSizeInPixel
@@ -33,8 +33,9 @@ export class GameDrawer
                     PlayerMarker.onload = () => {
                         this.GameCanvasContext.drawImage(
                             PlayerMarker,
-                            columns*this.SquareSize,
-                            rows*this.SquareSize
+                            columns*this.SquareSize[1],
+                            rows*this.SquareSize[0],
+                            this.SquareSize[1], this.SquareSize[0]
                         )
                     }
                     PlayerMarker.src = Players[Player]['marker']
@@ -54,8 +55,9 @@ export class GameDrawer
         SelectMarker.onload = () => {
             this.SelectCanvasContext.drawImage(
                 SelectMarker,
-                column*this.SquareSize,
-                row*this.SquareSize
+                column*this.SquareSize[1],
+                row*this.SquareSize[0],
+                this.SquareSize[1], this.SquareSize[0]
             )
         }
         SelectMarker.src = "../assets/Select.png"
@@ -72,12 +74,20 @@ export class GameDrawer
         console.log()
         for (let row = 0; row <= AmountOfRows; row++)
         {
-            this.BorderCanvasContext.fillRect(0, row*this.SquareSize - (this.BorderWidth/2), this.GAME_CANVAS_WIDTH, this.BorderWidth)
+            this.BorderCanvasContext.fillRect(
+                0, 
+                row*this.SquareSize[0] - (this.BorderWidth/2), 
+                this.SquareSize[1]*AmountOfColumns, 
+                this.BorderWidth)
         }
 
         for (let column = 0; column <= AmountOfColumns; column++)
         {
-            this.BorderCanvasContext.fillRect(column*this.SquareSize - (this.BorderWidth/2), 0, this.BorderWidth, this.GAME_CANVAS_HEIGHT)
+            this.BorderCanvasContext.fillRect(
+                column*this.SquareSize[1] - (this.BorderWidth/2), 
+                0, 
+                this.BorderWidth, 
+                this.SquareSize[0]*AmountOfRows)
         }
 
     }

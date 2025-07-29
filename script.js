@@ -5,21 +5,28 @@ import { GameUI } from "./scripts/ui.js"
 const SelectCan = document.getElementById("selectcanvas")
 const GameCan = document.getElementById("gamecanvas")
 const BorderCan = document.getElementById("bordercanvas")
+const PlayerTurnCan = document.getElementById("playerturn")
 
 
 class GameManager
 {
-    constructor({DefaultPlayerSize=3, DefaultSquareSize=100, DefaultRows=6, DefaultColumns=7, DefaultTargetCount=4})
+    /**
+     * 
+     * Square size = [height (Vertical) x Width (Horizontal)]
+     */
+    constructor({DefaultPlayerSize=2, DefaultSquareSize=[100, 100], DefaultRows=6, DefaultColumns=7, DefaultTargetCount=4})
     {
         this.SquareSize = DefaultSquareSize
         this.GraphicsManager = new GameDrawer({
+            SquareSizeInPixel: DefaultSquareSize,
             GameCanvas: GameCan,
             SelectCanvas: SelectCan,
             BorderCanvas: BorderCan,
-            BorderWidthInPixel: 5
+            BorderWidthInPixel: 5,
         })
 
-        
+        this.CanvasWidth = GameCan.width 
+        this.CanvasHeight = GameCan.height
 
         this.PlayerSize = DefaultPlayerSize
         // between 0 and Playersize -1
@@ -32,20 +39,56 @@ class GameManager
         })
         this.GameLogicManager.resetGameBoard()
 
-        this.GameUIManager = new GameUI({})
+        this.GameUIManager = new GameUI({
+            PlayerTurnCanvas: PlayerTurnCan
+        })
 
+        this.AmountColumns = DefaultColumns
+        this.AmountRows = DefaultRows
+
+        this.MAX_GAME_WIDTH = this.AmountColumns*this.SquareSize[1]
+        this.MAX_GAME_HEIGHT = this.AmountRows*this.SquareSize[0]
 
         this.GraphicsManager.drawBorder(DefaultRows, DefaultColumns)
         this.CurrentSelectedColumn = null
 
         this.HasSomeoneWon = false
+        this.Stalemate = false
+
+        this.GameUIManager.drawPlayerTurn(this.CurrentPlayer + 1)
     }
 
-    selectColumn(xPositionOfMouse)
+    calculateSquareSize()
     {
+        const SquareWidth = this.CanvasWidth/this.AmountColumns
+        const SquareHeight = this.CanvasHeight/this.AmountRows
+        this.SquareSize = [SquareHeight, SquareWidth]
+    }
 
-        const XColumn = xPositionOfMouse/this.SquareSize
-        const NearestColumn = Math.floor(XColumn)
+    findNearestColumn(xPositionOfMouse, yPositionOfMouse)
+    {
+        if (xPositionOfMouse >= this.MAX_GAME_WIDTH)
+        {
+            return
+        }
+
+        if (yPositionOfMouse >= this.MAX_GAME_HEIGHT)
+        {
+            return
+        }
+
+        const ColumnWeAreIn = xPositionOfMouse/this.SquareSize[1]
+        return Math.floor(ColumnWeAreIn)
+    }
+
+    selectColumn(xPositionOfMouse, yPositionOfMouse)
+    {
+        if (this.HasSomeoneWon || this.Stalemate)
+        {
+            return
+        }
+
+        const NearestColumn = this.findNearestColumn(xPositionOfMouse, yPositionOfMouse)
 
         if (NearestColumn == this.CurrentSelectedColumn)
         {
@@ -64,14 +107,14 @@ class GameManager
         this.GraphicsManager.drawSelection(AvailablePosition[0], AvailablePosition[1])
     }
 
-    makeGameMove(xPositionOfMouse)
+    makeGameMove(xPositionOfMouse, yPositionOfMouse)
     {
-        if (this.HasSomeoneWon)
+        if (this.HasSomeoneWon || this.Stalemate)
         {
             return
         }
-        const XColumn = xPositionOfMouse/this.SquareSize
-        const NearestColumn = Math.floor(XColumn)
+
+        const NearestColumn = this.findNearestColumn(xPositionOfMouse, yPositionOfMouse)
         const moveMade = this.GameLogicManager.makeMove(NearestColumn, this.CurrentPlayer + 1)
         if (!moveMade)
         {
@@ -83,8 +126,16 @@ class GameManager
 
         if (CheckForWin)
         {   
-            console.log("victory")
+            this.GameUIManager.handlePlayerWin(this.CurrentPlayer + 1)
             this.HasSomeoneWon = true
+            return
+        }
+
+        const CheckForStalemate = !this.GameLogicManager.checkForAnyAvailableMoves()
+        if (CheckForStalemate)
+        {
+            this.Stalemate = true
+            this.GameUIManager.handleStalemate()
             return
         }
 
@@ -92,6 +143,7 @@ class GameManager
         this.CurrentSelectedColumn = null
         this.selectColumn(xPositionOfMouse)
         this.nextTurn()
+        this.GameUIManager.drawPlayerTurn(this.CurrentPlayer + 1)
     }
 
     drawBoard()
@@ -112,15 +164,14 @@ class GameManager
 function main()
 {
     const test = new GameManager({})
-    test.selectColumn(122)
 
     // BorderCanvas is used as its the top layer
     BorderCan.addEventListener('mousemove', (event) => {
-        test.selectColumn(event.offsetX)
+        test.selectColumn(event.offsetX, event.offsetY)
     })
 
     BorderCan.addEventListener('click', (event) => {
-        test.makeGameMove(event.offsetX)
+        test.makeGameMove(event.offsetX, event.offsetY)
         test.drawBoard()
     })
 }

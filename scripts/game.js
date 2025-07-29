@@ -68,10 +68,15 @@ export class ConnectXGame
         function CheckIfElementsInArrayAreTheSame(arr)
         {
             const FixedElement = arr[0]
+            if (FixedElement == -1)
+            {
+                return false
+            }
             return arr.every(element => element === FixedElement) && (FixedElement != 0)
         }
 
         let DiagonalSquares = []
+        let DiagonalToLeftSquares = []
         let HorizontalSquares = []
         let VerticalSquares = []
 
@@ -81,12 +86,17 @@ export class ConnectXGame
             const DiagValue = ((row + targetSquares < this.MAX_ROWS) && (column + targetSquares < this.MAX_COLUMNS)) ? this.Board[row + targetSquares][column + targetSquares] : -1
             const HoriValue = (column + targetSquares < this.MAX_COLUMNS) ? this.Board[row][column + targetSquares] : -1
             const VertValue = (row + targetSquares < this.MAX_ROWS) ? this.Board[row + targetSquares][column] : -1
+            const DiagLeftValue = ((row - targetSquares > 0) && (column - targetSquares < this.MAX_COLUMNS)) ? this.Board[row - targetSquares][column + targetSquares] : -1
             DiagonalSquares.push(DiagValue)
             HorizontalSquares.push(HoriValue)
             VerticalSquares.push(VertValue)
+            DiagonalToLeftSquares.push(DiagLeftValue)
         }
 
-        return CheckIfElementsInArrayAreTheSame(DiagonalSquares) || CheckIfElementsInArrayAreTheSame(HorizontalSquares) || CheckIfElementsInArrayAreTheSame(VerticalSquares)
+        return (CheckIfElementsInArrayAreTheSame(DiagonalSquares) 
+        || CheckIfElementsInArrayAreTheSame(HorizontalSquares) 
+        || CheckIfElementsInArrayAreTheSame(VerticalSquares)
+        || CheckIfElementsInArrayAreTheSame(DiagonalToLeftSquares))
     }
 
     //fix this
@@ -102,6 +112,19 @@ export class ConnectXGame
                 {
                     return true
                 }
+            }
+        }
+        return false
+    }
+
+    checkForAnyAvailableMoves()
+    {
+        for (let columns = 0; columns < this.MAX_COLUMNS; columns++)
+        {
+            let AvailableMovesInAColumn = this.findAvailableSquareInColumn(columns)
+            if (AvailableMovesInAColumn[0] != -1)
+            {
+                return true
             }
         }
         return false
